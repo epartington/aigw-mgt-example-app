@@ -1,0 +1,11 @@
+{
+  "repo": "https://github.com/PaloAltoNetworks/openapi.git",
+  "branch": "main",
+  "commit": "659339799ae30a06c3bf1859507a4a6c131814fc",
+  "date": "2026-10-26",
+  "previous": {
+    "snapshot": "",
+    "commit": ""
+  },
+  "spec_files": [ "openapi.yaml" ]
+}
