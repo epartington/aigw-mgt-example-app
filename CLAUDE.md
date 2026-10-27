@@ -2,6 +2,32 @@
 
 Guidance for Claude Code (and humans) working in this repository.
 
+## Working procedure
+
+Before any change, Claude Code follows the generic workflows under
+[`.claude/shared/`](.claude/shared/):
+
+- [`.claude/shared/system/base.md`](.claude/shared/system/base.md) — base operating rules
+  (plan first, never guess, never add scope, tag assumptions `VERIFIED`/`ASSUMED`/`UNKNOWN`).
+- [`.claude/shared/workflows/plan-first.md`](.claude/shared/workflows/plan-first.md) — before
+  any code/config/infra change: investigate, plan, get explicit approval.
+- [`.claude/shared/workflows/implement.md`](.claude/shared/workflows/implement.md) — only
+  after a plan is approved: execute, verify, commit only on explicit ask.
+- [`.claude/shared/workflows/review.md`](.claude/shared/workflows/review.md) — read-only
+  review/audit requests: no edits, findings only.
+
+These files are generic and carry no project specifics. **This file (`CLAUDE.md`) wins on
+any conflict** with them.
+
+## Documentation style
+
+All documentation — READMEs, this file, and inline code comments where applicable — must
+follow Simplified Technical English (ASD-STE100). Before writing or editing
+documentation, read
+[`.claude/shared/system/asd_ste100_style_guide.md`](.claude/shared/system/asd_ste100_style_guide.md)
+and apply its vocabulary, sentence-length, and active-voice rules. Check your own output
+against the guide before finalizing it.
+
 ## What this project is
 
 A demo application that exposes the **management and reporting** functions of the
@@ -68,3 +94,9 @@ endpoints are in scope).
   <https://github.com/PaloAltoNetworks/openapi> (branch `main`) — the published "Prisma
   AIRS AI Gateway API", a single bundled `openapi.yaml`. Tracked via dated snapshots and
   the `update-openapi-spec` skill; change detection is by upstream commit SHA.
+- **Stack:** Python, FastAPI + Jinja2 + HTMX. Server-rendered pages, no JS build step,
+  one small process — fits a small Docker image. App code lives under `app/`.
+- **Portal URL:** `aigw-portal.<domain>`, domain supplied at deploy time.
+- **Open decisions (not yet made):** trust model for calling the gateway's admin/analytics
+  APIs (service key vs. pass-through vs. hybrid); how JWT login is performed; what
+  "agents" maps to in the gateway API (no agents resource exists in the spec yet).

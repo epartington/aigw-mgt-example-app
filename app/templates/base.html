@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}AI Gateway Portal{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+  <div class="layout">
+    <nav class="sidenav">
+      <div class="sidenav-top">
+        <div class="sidenav-brand">Gateway Portal</div>
+        <a class="sidenav-item {{ 'active' if active_nav == 'dashboard' }}" href="/dashboard">Dashboard</a>
+        <a class="sidenav-item {{ 'active' if active_nav == 'integrations' }}" href="/integrations">Integrations</a>
+      </div>
+      <div class="sidenav-bottom">
+        <a class="sidenav-item {{ 'active' if active_nav == 'help' }}" href="/help">Help</a>
+        <a class="sidenav-item" href="/signout">Sign out</a>
+      </div>
+    </nav>
+
+    <div class="main">
+      <header class="topbar">
+        <span class="topbar-user">{{ username }}</span>
+        <a class="topbar-signout" href="/signout">Sign out</a>
+      </header>
+
+      <main class="content">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+</body>
+</html>
