@@ -19,12 +19,13 @@ Before any change, Claude Code follows the generic workflows under
 These files are generic and carry no project specifics. **This file (`CLAUDE.md`) wins on
 any conflict** with them.
 
-## Documentation style
+## Communication style
 
-All documentation — READMEs, this file, and inline code comments where applicable — must
-follow Simplified Technical English (ASD-STE100). Before writing or editing
-documentation, read
-[`.claude/shared/system/asd_ste100_style_guide.md`](.claude/shared/system/asd_ste100_style_guide.md)
+All communication — chat replies, plans, and explanations, not only written
+documentation (READMEs, this file, inline code comments) — must follow Simplified
+Technical English (ASD-STE100). Before writing or editing documentation, and before
+replying, read
+[`.claude/output-styles/asd_ste100_style_guide.md`](.claude/output-styles/asd_ste100_style_guide.md)
 and apply its vocabulary, sentence-length, and active-voice rules. Check your own output
 against the guide before finalizing it.
 
