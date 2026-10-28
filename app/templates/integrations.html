@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Integrations — AI Gateway Portal{% endblock %}
+{% block content %}
+<h1>Integrations</h1>
+<p class="page-subtitle">Connect AI Gateway to your development tools using the token helper.</p>
+
+<div class="tile-row">
+  {% for tool in tools %}
+  <a class="tile tile-link {{ 'active' if tool.slug == active_tool }}" href="/integrations?tool={{ tool.slug }}">
+    <div class="tile-label">{{ tool.summary }}</div>
+    <div class="tile-value">{{ tool.name }}</div>
+  </a>
+  {% endfor %}
+</div>
+
+{% for tool in tools %}
+{% if tool.slug == active_tool %}
+<div class="tile tile-wide setup-card">
+  <div class="tile-label">Set up {{ tool.name }}</div>
+  {% if tool.warning %}
+  <div class="setup-warning">{{ tool.warning }}</div>
+  {% endif %}
+  <p>{{ tool.intro }}</p>
+  <pre class="command-snippet"><code>{{ tool.command }}</code></pre>
+  <p class="setup-note">{{ tool.note }}</p>
+</div>
+{% endif %}
+{% endfor %}
+{% endblock %}
