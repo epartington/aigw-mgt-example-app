@@ -1,14 +1,14 @@
 import httpx
-from fastapi import Depends, FastAPI, Request
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.auth import (
     RedirectToLogin,
-    get_session_access_token,
-    get_session_claims,
+    get_current_access_token,
+    get_current_claims,
     get_session_refresh_token,
     handle_callback,
     refresh_access_token,
@@ -29,6 +29,9 @@ app = FastAPI(title="AI Developer Portal")
 app.add_middleware(SessionMiddleware, secret_key=settings.session_secret)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
+# Lets base.html hide the Sign out links in header mode — clicking one
+# can't end a session this app doesn't own.
+templates.env.globals["auth_mode"] = settings.auth_mode
 
 
 @app.exception_handler(RedirectToLogin)
@@ -41,18 +44,32 @@ def _redirect_to_login(request: Request, exc: RedirectToLogin) -> RedirectRespon
 
 @app.get("/")
 def root(request: Request):
-    if get_session_claims(request) is not None:
+    if get_current_claims(request) is not None:
         return RedirectResponse(url="/dashboard")
+    if settings.auth_mode == "header":
+        # Not a "please sign in" moment — there is no local login to
+        # offer. A missing header here is a deployment misconfiguration:
+        # the proxy in front of this app isn't setting Authorization.
+        return HTMLResponse(
+            "<h1>No Authorization header received</h1>"
+            "<p>AUTH_MODE=header expects an upstream proxy to set one "
+            "on every request.</p>",
+            status_code=401,
+        )
     return templates.TemplateResponse(request, "landing.html", {})
 
 
 @app.get("/login")
 async def login(request: Request):
+    if settings.auth_mode != "oidc":
+        raise HTTPException(status_code=404, detail="Not available in AUTH_MODE=header")
     return await start_login(request)
 
 
 @app.get("/callback")
 async def auth_callback(request: Request) -> RedirectResponse:
+    if settings.auth_mode != "oidc":
+        raise HTTPException(status_code=404, detail="Not available in AUTH_MODE=header")
     claims, access_token, refresh_token = await handle_callback(request)
     request.session["claims"] = claims
     request.session["access_token"] = access_token
@@ -114,12 +131,26 @@ def help_page(request: Request, claims: dict = Depends(require_login)):
 
 @app.get("/ui/token.json")
 def ui_token(request: Request, claims: dict = Depends(require_login)):
-    return build_token_panel_response(get_session_access_token(request))
+    return build_token_panel_response(get_current_access_token(request))
 
 
 @app.post("/ui/token/refresh")
 async def ui_token_refresh(request: Request, claims: dict = Depends(require_login)):
-    """Get a genuinely new access token from the IDP, not just re-read the old one."""
+    """Get a genuinely new access token from the IDP, not just re-read the old one.
+
+    AUTH_MODE=header: this app never holds a refresh token — whatever
+    upstream proxy set the Authorization header owns that token's
+    lifecycle, not this app. Always reports no refresh token available.
+    """
+    if settings.auth_mode == "header":
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": "AUTH_MODE=header: this app does not manage token refresh. "
+                "The upstream proxy owns that."
+            },
+        )
+
     refresh_token = get_session_refresh_token(request)
     if not refresh_token:
         return JSONResponse(

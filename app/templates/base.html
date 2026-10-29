@@ -17,14 +17,18 @@
       </div>
       <div class="sidenav-bottom">
         <a class="sidenav-item {{ 'active' if active_nav == 'help' }}" href="/help">Help</a>
+        {% if auth_mode != 'header' %}
         <a class="sidenav-item" href="/signout">Sign out</a>
+        {% endif %}
       </div>
     </nav>
 
     <div class="main">
       <header class="topbar">
         <span class="topbar-user">{{ username }}</span>
+        {% if auth_mode != 'header' %}
         <a class="topbar-signout" href="/signout">Sign out</a>
+        {% endif %}
       </header>
 
       <main class="content">
