@@ -102,12 +102,34 @@ endpoints are in scope).
   page, and the sidenav brand. Not the same thing as the gateway product itself
   ("AI Gateway" / "Portkey / Prisma AIRS AI Gateway"), which this site manages —
   don't conflate the two when editing copy.
-- **Auth:** the app runs its own OIDC login (Authorization Code flow, via `authlib`).
-  No upstream proxy does this step. All config — `OIDC_ISSUER_URL`, `OIDC_CLIENT_ID`,
-  `OIDC_CLIENT_SECRET`, `OIDC_REDIRECT_URI`, `SESSION_SECRET`, `AIGW_BASE_URL`,
-  `AIGW_TOKEN_URL`, `AIGW_CLIENT_ID`, `AIGW_CLIENT_SECRET`, `AIGW_TSG_ID` — comes
-  from the environment (`.env` locally; a vault or secret manager injects the
-  same names in a real deployment). See `.env.example`.
+- **Auth:** two modes, picked by `AUTH_MODE` (`app/config.py`, `app/auth.py`).
+  - **`AUTH_MODE=oidc` (default):** the app runs its own OIDC login (Authorization
+    Code flow, via `authlib`). No upstream proxy does this step. `OIDC_ISSUER_URL`,
+    `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`, `OIDC_REDIRECT_URI` are required in this
+    mode — config fails loudly at startup if any is missing or empty.
+  - **`AUTH_MODE=header`:** this app's own login is skipped entirely. An upstream
+    proxy (nginx, Traefik, oauth2-proxy, ...) must already have authenticated the
+    request and set `Authorization: Bearer <token>` on every request — the standard
+    header, not a custom one. `/login` and `/callback` return `404` in this mode; a
+    missing header on any other route returns `401`, not a redirect into a login
+    flow that may not even be configured. The four `OIDC_*` values above become
+    optional.
+    - **The real tradeoff, stated plainly:** this app does **not** verify the
+      header's token signature in this mode — the trust boundary is the network
+      path, not this code. Only use this mode where the proxy is the sole way to
+      reach this app; if the app is ever reachable directly, anyone can forge the
+      header and walk in as anyone.
+    - **What this mode does not get:** no refresh (`POST /ui/token/refresh` always
+      reports the proxy owns that, not this app), no local sign-out (the "Sign out"
+      links are hidden in `base.html` via the `auth_mode` Jinja global — clicking
+      one couldn't end a session this app doesn't own), no landing page (a missing
+      header is a deployment misconfiguration, not a "please sign in" moment).
+  - `SESSION_SECRET`, `AIGW_BASE_URL`, `AIGW_TOKEN_URL`, `AIGW_CLIENT_ID`,
+    `AIGW_CLIENT_SECRET`, `AIGW_TSG_ID` are required in **both** modes — the admin
+    APIs need their own credential regardless of how the signed-in user
+    authenticated. All of this comes from the environment (`.env` locally; a vault
+    or secret manager injects the same names in a real deployment). See
+    `.env.example`.
   - **Two auth paths into the gateway**, both in `app/gateway.py`:
     - **Admin APIs** (analytics, policies, and similar): a client-credentials
       token from Strata Cloud Manager's auth service — see
