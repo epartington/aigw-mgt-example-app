@@ -3,15 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}AI Gateway Portal{% endblock %}</title>
+  <title>{% block title %}AI Developer Portal{% endblock %}</title>
   <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
   <div class="layout">
     <nav class="sidenav">
       <div class="sidenav-top">
-        <div class="sidenav-brand">Gateway Portal</div>
+        <div class="sidenav-brand">AI Developer Portal</div>
         <a class="sidenav-item {{ 'active' if active_nav == 'dashboard' }}" href="/dashboard">Dashboard</a>
+        <a class="sidenav-item {{ 'active' if active_nav == 'catalog' }}" href="/catalog">Catalog</a>
         <a class="sidenav-item {{ 'active' if active_nav == 'integrations' }}" href="/integrations">Integrations</a>
       </div>
       <div class="sidenav-bottom">
@@ -30,6 +31,20 @@
         {% block content %}{% endblock %}
       </main>
     </div>
+
+    <aside class="token-sidecar" id="token-sidecar">
+      <div class="token-sidecar-header">
+        <span class="token-sidecar-title">Relayed JWT</span>
+        <div class="token-sidecar-header-actions">
+          <button id="token-refresh" class="token-refresh-btn" type="button" title="Refresh" aria-label="Refresh">↻</button>
+          <button id="token-collapse-toggle" class="token-collapse-btn" type="button" title="Collapse" aria-label="Collapse panel">»</button>
+        </div>
+      </div>
+      <p class="token-sidecar-subtitle">Sent to the gateway as <code>Authorization: Bearer</code>.</p>
+      <div id="token-sidecar-body" class="token-sidecar-body"></div>
+    </aside>
   </div>
+  <script src="/static/js/token-sidecar.js" defer></script>
+  {% block extra_scripts %}{% endblock %}
 </body>
 </html>

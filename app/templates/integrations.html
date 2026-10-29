@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Integrations — AI Gateway Portal{% endblock %}
+{% block title %}Integrations — AI Developer Portal{% endblock %}
 {% block content %}
 <h1>Integrations</h1>
 <p class="page-subtitle">Connect AI Gateway to your development tools using the token helper.</p>
@@ -20,10 +20,60 @@
   {% if tool.warning %}
   <div class="setup-warning">{{ tool.warning }}</div>
   {% endif %}
+
+  {% if tool.setup_steps %}
+  <div class="setup-steps-title">{{ tool.setup_steps.title }}</div>
+
+  <div class="setup-step">
+    <div class="setup-step-title">{{ tool.setup_steps.step1.title }}</div>
+    <div class="setup-step-subtitle">{{ tool.setup_steps.step1.subtitle }}</div>
+    <table class="setup-table">
+      <thead>
+        <tr><th>Platform</th><th>Download</th></tr>
+      </thead>
+      <tbody>
+        {% for row in tool.setup_steps.step1.table_rows %}
+        <tr><td>{{ row.platform or "—" }}</td><td>{{ row.download or "—" }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="setup-step">
+    <div class="setup-step-title">{{ tool.setup_steps.step2.title }}</div>
+    <div class="setup-step-subtitle">{{ tool.setup_steps.step2.subtitle }}</div>
+    <p class="setup-step-description">{{ tool.setup_steps.step2.description }}</p>
+
+    <div class="setup-tabs">
+      <div class="setup-tab-buttons">
+        {% for tab in tool.setup_steps.step2.tabs %}
+        <button type="button" class="setup-tab-btn {{ 'active' if loop.first }}" data-tab="{{ tab.id }}">{{ tab.label }}</button>
+        {% endfor %}
+      </div>
+      {% for tab in tool.setup_steps.step2.tabs %}
+      <div class="setup-tab-panel {{ 'active' if loop.first }}" data-tab="{{ tab.id }}">
+        <div class="code-block">
+          <div class="code-block-header">
+            <span class="code-block-title">{{ tab.code_title }}</span>
+            <button type="button" class="code-copy-btn" data-copy-target="code-{{ tool.slug }}-{{ tab.id }}">Copy</button>
+          </div>
+          <pre class="command-snippet"><code id="code-{{ tool.slug }}-{{ tab.id }}">{{ tab.code }}</code></pre>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% else %}
   <p>{{ tool.intro }}</p>
   <pre class="command-snippet"><code>{{ tool.command }}</code></pre>
   <p class="setup-note">{{ tool.note }}</p>
+  {% endif %}
 </div>
 {% endif %}
 {% endfor %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/integrations.js" defer></script>
 {% endblock %}

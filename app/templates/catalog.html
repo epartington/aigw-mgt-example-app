@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Catalog — AI Developer Portal{% endblock %}
+{% block content %}
+<h1>Catalog</h1>
+<p class="page-subtitle">Models and MCP servers approved for this workspace. Availability is governed in the Admin Console.</p>
+
+<div class="setup-tab-buttons">
+  <a class="setup-tab-btn {{ 'active' if active_tab == 'models' }}" href="/catalog?tab=models">Models</a>
+  <a class="setup-tab-btn {{ 'active' if active_tab == 'mcp-tools' }}" href="/catalog?tab=mcp-tools">MCP Tools</a>
+</div>
+
+{% if active_tab == 'models' %}
+<table class="setup-table">
+  <thead>
+    <tr><th>Model</th><th>Provider</th><th>Input / 1M tokens</th><th>Output / 1M tokens</th><th>Status</th></tr>
+  </thead>
+  <tbody>
+    {% for row in tab_data.rows %}
+    <tr>
+      <td>{{ row.model or "—" }}</td>
+      <td>{{ row.provider or "—" }}</td>
+      <td>{{ row.input_per_1m if row.input_per_1m is not none else "—" }}</td>
+      <td>{{ row.output_per_1m if row.output_per_1m is not none else "—" }}</td>
+      <td>
+        {% if row.status is not none %}
+        <span class="status-pill {{ 'status-pill-green' if row.status_positive else 'status-pill-neutral' }}">{{ row.status }}</span>
+        {% else %}
+        —
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" class="setup-note">No models found for this workspace.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<table class="setup-table">
+  <thead>
+    <tr><th>Server</th><th>Auth</th><th>Gateway URL</th><th>Status</th></tr>
+  </thead>
+  <tbody>
+    {% for row in tab_data.rows %}
+    <tr>
+      <td>{{ row.server or "—" }}</td>
+      <td>{{ row.auth or "—" }}</td>
+      <td>{{ row.gateway_url or "—" }}</td>
+      <td>
+        {% if row.status %}
+        <span class="status-pill {{ 'status-pill-green' if row.status_positive else 'status-pill-neutral' }}">{{ row.status }}</span>
+        {% else %}
+        —
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4" class="setup-note">No MCP servers found for this workspace.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<div class="tile tile-wide debug-tile">
+  <div class="tile-label">Debug: API calls made for this tab</div>
+  {% if tab_data.debug_calls %}
+  {% for call in tab_data.debug_calls %}
+  <details class="debug-call">
+    <summary>{{ call.title }}</summary>
+    <pre class="debug-output">{{ call | tojson(indent=2) }}</pre>
+  </details>
+  {% endfor %}
+  {% else %}
+  <p class="setup-note">No API calls made yet — this tab's data is still a placeholder.</p>
+  {% endif %}
+</div>
+{% endblock %}
