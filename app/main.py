@@ -59,6 +59,20 @@ def root(request: Request):
     return templates.TemplateResponse(request, "landing.html", {})
 
 
+@app.get("/healthz")
+def healthz() -> dict:
+    """Liveness/readiness probe target. Deliberately unauthenticated in BOTH
+    auth modes — unlike `/`, a missing Authorization header here is expected,
+    not a misconfiguration. Kubernetes probes never send one.
+
+    No Depends(require_login), no settings.auth_mode branching: if this
+    process is serving requests at all, config already loaded successfully
+    at import time (app/config.py's Settings() raises at startup on any
+    missing/invalid value), so there's nothing further to check here.
+    """
+    return {"status": "ok"}
+
+
 @app.get("/login")
 async def login(request: Request):
     if settings.auth_mode != "oidc":

@@ -124,6 +124,15 @@ endpoints are in scope).
       links are hidden in `base.html` via the `auth_mode` Jinja global — clicking
       one couldn't end a session this app doesn't own), no landing page (a missing
       header is a deployment misconfiguration, not a "please sign in" moment).
+  - **`GET /healthz` is unauthenticated in both modes, on purpose — do not add
+    `Depends(require_login)` to it.** Kubernetes liveness/readiness probes never
+    send an `Authorization` header, so in `AUTH_MODE=header` a protected `/healthz`
+    would permanently fail probes and the pod would never go Ready. It's a plain
+    top-level route next to `root()`, not under `/ui/`, and does nothing beyond
+    returning `{"status": "ok"}` — no DB check, no call to the gateway's admin
+    token endpoint. A deeper check belongs on a separate `/readyz`, not here: tying
+    liveness to an external service (e.g. Strata Cloud Manager) being reachable
+    would restart a healthy pod over someone else's outage.
   - `SESSION_SECRET`, `AIGW_BASE_URL`, `AIGW_TOKEN_URL`, `AIGW_CLIENT_ID`,
     `AIGW_CLIENT_SECRET`, `AIGW_TSG_ID` are required in **both** modes — the admin
     APIs need their own credential regardless of how the signed-in user
