@@ -163,14 +163,24 @@ def get_session_refresh_token(request: Request) -> str | None:
 def get_header_access_token(request: Request) -> str | None:
     """Read the bearer token an upstream proxy already put on the request.
 
-    Only meaningful when settings.auth_mode == "header". No custom header
-    name — literally the standard Authorization header, per the request
-    this was built for.
+    Header name is configurable (settings.auth_header_name, default
+    "Authorization") because different proxies expose the usable token
+    under different names — e.g. oauth2-proxy's ForwardAuth mode can only
+    put the OIDC ID token (no custom claims) on a literal Authorization
+    header; the real access token is instead on
+    X-Auth-Request-Access-Token. See CLAUDE.md "AUTH_MODE=header" for the
+    incident this fixes.
+
+    Strips a leading "Bearer " prefix if present (the standard
+    Authorization convention); a custom header name's raw value is used
+    as-is otherwise.
     """
-    header = request.headers.get("authorization")
-    if not header or not header.lower().startswith("bearer "):
+    header = request.headers.get(settings.auth_header_name.lower())
+    if not header:
         return None
-    return header[len("Bearer ") :].strip() or None
+    if header.lower().startswith("bearer "):
+        header = header[len("Bearer ") :]
+    return header.strip() or None
 
 
 def get_header_claims(request: Request) -> dict | None:
