@@ -1,11 +1,21 @@
 :root {
   --nav-width: 220px;
   --topbar-height: 56px;
-  --border: #e2e2e2;
-  --bg: #f7f7f8;
-  --text: #1a1a1a;
-  --muted: #666;
-  --accent: #2f5fdb;
+  --border: #2b2f3a;
+  --bg: #11131a;
+  --surface: #1b1e28;
+  --text: #e6e8ec;
+  --muted: #9aa1ac;
+  --accent: #5b8cff;
+  --accent-soft: #1e2a4a;
+  --code-bg: #0a0b10;
+  --code-bg-2: #15171f;
+  --green-bg: #103321;
+  --green-text: #5fd88a;
+  --amber-bg: #3a2c08;
+  --amber-border: #caa23d;
+  --amber-text: #f2c94c;
+  --red-text: #ff7b72;
 }
 
 * { box-sizing: border-box; }
@@ -26,7 +36,7 @@ body {
 .sidenav {
   width: var(--nav-width);
   flex-shrink: 0;
-  background: #fff;
+  background: var(--surface);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
@@ -57,7 +67,7 @@ body {
 }
 
 .sidenav-item.active {
-  background: #eef2ff;
+  background: var(--accent-soft);
   color: var(--accent);
   font-weight: 600;
   border-right: 3px solid var(--accent);
@@ -73,7 +83,7 @@ body {
 .topbar {
   height: var(--topbar-height);
   flex-shrink: 0;
-  background: #fff;
+  background: var(--surface);
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
@@ -122,7 +132,7 @@ body {
 }
 
 .tile {
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 16px;
@@ -179,12 +189,12 @@ body {
 
 .debug-tile {
   margin-top: 16px;
-  border-color: #f0b429;
+  border-color: var(--amber-border);
 }
 
 .debug-output {
-  background: #1a1a1a;
-  color: #f1f1f1;
+  background: var(--code-bg);
+  color: var(--text);
   padding: 12px 16px;
   border-radius: 6px;
   overflow-x: auto;
@@ -230,7 +240,7 @@ body {
 .tile-link.active {
   border-color: var(--accent);
   border-width: 2px;
-  background: #eef2ff;
+  background: var(--accent-soft);
 }
 
 .setup-card p {
@@ -238,8 +248,8 @@ body {
 }
 
 .command-snippet {
-  background: #1a1a1a;
-  color: #f1f1f1;
+  background: var(--code-bg);
+  color: var(--text);
   padding: 12px 16px;
   border-radius: 6px;
   overflow-x: auto;
@@ -313,8 +323,8 @@ body {
 }
 
 .status-pill-green {
-  background: #e3f6e7;
-  color: #1a7f37;
+  background: var(--green-bg);
+  color: var(--green-text);
 }
 
 .status-pill-neutral {
@@ -362,8 +372,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #2a2a2a;
-  color: #f1f1f1;
+  background: var(--code-bg-2);
+  color: var(--text);
   padding: 8px 16px;
   border-radius: 6px 6px 0 0;
   font-size: 12px;
@@ -375,8 +385,8 @@ body {
 
 .code-copy-btn {
   background: none;
-  border: 1px solid #555;
-  color: #f1f1f1;
+  border: 1px solid var(--border);
+  color: var(--text);
   border-radius: 4px;
   padding: 2px 10px;
   font-size: 12px;
@@ -384,7 +394,7 @@ body {
 }
 
 .code-copy-btn:hover {
-  border-color: #f1f1f1;
+  border-color: var(--text);
 }
 
 .code-block .command-snippet {
@@ -401,7 +411,7 @@ body {
   position: sticky;
   top: 0;
   overflow-y: auto;
-  background: #fff;
+  background: var(--surface);
   border-left: 1px solid var(--border);
   padding: 16px;
   font-size: 13px;
@@ -518,12 +528,12 @@ body {
 }
 
 .token-capability.present {
-  color: #1a7f37;
+  color: var(--green-text);
   font-weight: 600;
 }
 
 .token-capability.absent {
-  color: #cf222e;
+  color: var(--red-text);
   font-weight: 600;
 }
 
@@ -539,15 +549,15 @@ body {
 }
 
 .token-countdown.ok {
-  color: #1a7f37;
+  color: var(--green-text);
 }
 
 .token-countdown.warn {
-  color: #9a6700;
+  color: var(--amber-text);
 }
 
 .token-countdown.expired {
-  color: #cf222e;
+  color: var(--red-text);
 }
 
 .token-standard-claims pre {
@@ -568,7 +578,7 @@ body {
 }
 
 .token-copy-btn {
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 4px;
   cursor: pointer;
@@ -592,12 +602,12 @@ body {
 }
 
 .setup-warning {
-  background: #fff4e5;
-  border: 1px solid #f0b429;
+  background: var(--amber-bg);
+  border: 1px solid var(--amber-border);
   border-left-width: 4px;
   border-radius: 4px;
   padding: 10px 14px;
   margin-bottom: 12px;
   font-size: 13px;
-  color: #6b4a00;
+  color: var(--amber-text);
 }
