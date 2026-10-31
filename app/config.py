@@ -30,6 +30,16 @@ class Settings(BaseSettings):
     # sole way to reach it; see CLAUDE.md for the full tradeoff.
     auth_mode: Literal["oidc", "header"] = "oidc"
 
+    # Header name this app reads the bearer token from in AUTH_MODE=header.
+    # Default matches the standard convention ("Authorization: Bearer
+    # <token>"). Override when the upstream proxy can only expose the
+    # usable token under a different header — e.g. oauth2-proxy's
+    # ForwardAuth mode, where a literal Authorization response header can
+    # only ever carry the OIDC ID token (no custom claims), and the real
+    # access token is instead available as X-Auth-Request-Access-Token.
+    # See CLAUDE.md "AUTH_MODE=header" for the incident this fixes.
+    auth_header_name: str = "Authorization"
+
     # Required only when auth_mode is "oidc" — see _oidc_required_when_oidc_mode.
     oidc_issuer_url: str | None = None
     oidc_client_id: str | None = None

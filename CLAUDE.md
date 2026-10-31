@@ -109,11 +109,35 @@ endpoints are in scope).
     mode — config fails loudly at startup if any is missing or empty.
   - **`AUTH_MODE=header`:** this app's own login is skipped entirely. An upstream
     proxy (nginx, Traefik, oauth2-proxy, ...) must already have authenticated the
-    request and set `Authorization: Bearer <token>` on every request — the standard
-    header, not a custom one. `/login` and `/callback` return `404` in this mode; a
-    missing header on any other route returns `401`, not a redirect into a login
-    flow that may not even be configured. The four `OIDC_*` values above become
-    optional.
+    request and set the bearer token on every request, under the header named by
+    `AUTH_HEADER_NAME` (default `Authorization`, the standard convention —
+    **see the incident below before assuming the default is right for your proxy**).
+    `/login` and `/callback` return `404` in this mode; a missing header on any
+    other route returns `401`, not a redirect into a login flow that may not even
+    be configured. The four `OIDC_*` values above become optional.
+    - **Incident: a working, non-empty `Authorization` header is not proof it's
+      the right token.** On EKS, fronted by a central oauth2-proxy in Traefik
+      ForwardAuth mode, the default config looked like it worked — the app loaded,
+      a token was present — but every tier/workspace/budget feature had nothing to
+      read. Cause: in ForwardAuth mode, `--set-authorization-header` is the only
+      way oauth2-proxy can put anything on a literal `Authorization` *response*
+      header (there's no real reverse-proxied upstream to attach a request header
+      to instead), and that flag relays the **ID token**, not the access token.
+      Confirmed by decoding the token the app actually received: `jti` prefixed
+      `ID.` (not `AT.`), `aud` was the OAuth client ID (not the API resource), and
+      it carried an `at_hash` claim — which only exists on ID tokens, by OIDC spec.
+      The ID token carries none of this app's custom claims (`email_id`,
+      `portkey_workspace`, `scope`, `portkey_oid`, `defaults`). The real access
+      token, with every custom claim, was available from the same proxy under a
+      *different* header — `X-Auth-Request-Access-Token` (the same mechanism
+      `--set-xauthrequest` already uses, proven working in that environment).
+      **Lesson: decode and check `jti`/`aud` before trusting that a populated
+      `Authorization` header is carrying the token you think it is.**
+      Fixed by making the header name configurable (`AUTH_HEADER_NAME`,
+      `app/config.py`); `get_header_access_token` (`app/auth.py`) also strips a
+      leading `"Bearer "` prefix only if present, since a custom header like
+      `X-Auth-Request-Access-Token` carries the raw token with no prefix, while
+      the standard `Authorization` convention always has one.
     - **The real tradeoff, stated plainly:** this app does **not** verify the
       header's token signature in this mode — the trust boundary is the network
       path, not this code. Only use this mode where the proxy is the sole way to
