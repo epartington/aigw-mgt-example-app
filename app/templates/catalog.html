@@ -37,11 +37,16 @@
 {% else %}
 <table class="setup-table">
   <thead>
-    <tr><th>Server</th><th>Auth</th><th>Gateway URL</th><th>Status</th></tr>
+    <tr><th></th><th>Server</th><th>Auth</th><th>Gateway URL</th><th>Status</th></tr>
   </thead>
   <tbody>
     {% for row in tab_data.rows %}
-    <tr>
+    <tr class="mcp-server-row" data-server-id="{{ row.id }}">
+      <td>
+        {% if row.id %}
+        <button type="button" class="mcp-expand-toggle" aria-expanded="false" aria-label="Show tools">▸</button>
+        {% endif %}
+      </td>
       <td>{{ row.server or "—" }}</td>
       <td>{{ row.auth or "—" }}</td>
       <td>{{ row.gateway_url or "—" }}</td>
@@ -53,8 +58,11 @@
         {% endif %}
       </td>
     </tr>
+    <tr class="mcp-server-detail-row" hidden>
+      <td colspan="5"><div class="mcp-server-detail"></div></td>
+    </tr>
     {% else %}
-    <tr><td colspan="4" class="setup-note">No MCP servers found for this workspace.</td></tr>
+    <tr><td colspan="5" class="setup-note">No MCP servers found for this workspace.</td></tr>
     {% endfor %}
   </tbody>
 </table>
@@ -73,4 +81,9 @@
   <p class="setup-note">No API calls made yet — this tab's data is still a placeholder.</p>
   {% endif %}
 </div>
+{% endblock %}
+{% block extra_scripts %}
+{% if active_tab == 'mcp-tools' %}
+<script src="/static/js/catalog.js" defer></script>
+{% endif %}
 {% endblock %}

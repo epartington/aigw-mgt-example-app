@@ -315,6 +315,35 @@ endpoints are in scope).
     debug panel before trusting it. `workspace_id` here is passed as the resolved
     UUID on the same pattern as `/policies/usage-limits`'s identically-named param,
     also unconfirmed. Shows "No MCP servers found for this workspace" when empty.
+  - **Both tabs sort ascending, case-insensitive** (`app/data.py`): Models by
+    `model` (the slug), MCP Tools by `server` (the name). Plain `rows.sort(...)`
+    on a lowercased key, done once per request — no persisted sort preference,
+    no column-header click-to-sort.
+  - **Expandable tool list per MCP server** (`app/templates/catalog.html`,
+    `app/static/js/catalog.js`, `GET /catalog/mcp-servers/{id}` in `app/main.py`,
+    `app/data.py:get_mcp_server_detail`): each MCP Tools row has a ▸/▾ toggle that
+    lazy-loads, on first expand only, that server's enabled tool capabilities and
+    this signed-in user's access to the server as a whole.
+    - **Tools:** `GET /mcp-servers/{id}/capabilities?type=tool` (same host/token
+      as `/mcp-servers`), filtered to `enabled: true`, sorted alpha ascending by
+      `name`. Shows `title` if present, else `name`; `description` underneath.
+      "No enabled tools found for this server" when the filtered list is empty —
+      not a fabricated row.
+    - **User access, NOTE an unconfirmed mapping:** `McpServerUserAccessItem` has
+      no email/identity field — only `user_id`, `first_name`, `last_name`. This
+      matches the signed-in user by comparing the access-token claim
+      `portkey_oid` against each entry's `user_id`. **This equivalence is
+      ASSUMED, not confirmed against a real response** — check the debug panel's
+      `GET /mcp-servers/{id}/user-access` call before trusting an "Access
+      allowed"/"Access denied" result; if `portkey_oid` never matches any
+      `user_id`, every user silently falls through to `default_user_access`
+      instead, which would look correct by accident. When no per-user override
+      entry matches, the list's own `default_user_access` (`allow`/`deny`) is
+      the fallback — this is documented API behavior, not a guess, unlike the
+      `portkey_oid`/`user_id` match itself.
+    - This is server-level access (allow/deny the whole MCP server for a user),
+      not per-tool. The spec has no per-user, per-tool permission; don't build
+      a per-tool access column without a new endpoint to back it.
 - **Open decisions (not yet made):** what "agents" maps to in the gateway API (no
   agents resource exists in the spec yet); the usage-limit-policy matching logic
   when a workspace has more than one active cost policy; a real value for

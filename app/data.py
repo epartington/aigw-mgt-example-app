@@ -10,6 +10,8 @@ from datetime import datetime
 from app.gateway import (
     get_cost_usage_limit_policy,
     get_integration_models,
+    get_mcp_server_capabilities,
+    get_mcp_server_user_access,
     get_usage_limit_policy_entity,
     get_debug_trace,
     list_integrations,
@@ -39,6 +41,14 @@ class DashboardData:
 @dataclass
 class CatalogTabData:
     rows: list[dict]
+    debug_calls: list[dict]
+
+
+@dataclass
+class McpServerDetailData:
+    tools: list[dict]
+    user_access_label: str
+    user_access_positive: bool
     debug_calls: list[dict]
 
 
@@ -202,6 +212,7 @@ def get_catalog_models(claims: dict) -> CatalogTabData:
                 }
             )
 
+    rows.sort(key=lambda row: (row["model"] or "").lower())
     return CatalogTabData(rows=rows, debug_calls=get_debug_trace())
 
 
@@ -231,6 +242,7 @@ def get_catalog_mcp_tools(claims: dict) -> CatalogTabData:
     servers = list_mcp_servers(workspace_id) or []
     rows = [
         {
+            "id": server.get("id"),
             "server": server.get("name"),
             "auth": server.get("auth_type"),
             "gateway_url": server.get("url"),
@@ -239,7 +251,58 @@ def get_catalog_mcp_tools(claims: dict) -> CatalogTabData:
         }
         for server in servers
     ]
+    rows.sort(key=lambda row: (row["server"] or "").lower())
     return CatalogTabData(rows=rows, debug_calls=get_debug_trace())
+
+
+def get_mcp_server_detail(server_id: str, claims: dict) -> McpServerDetailData:
+    """Tools exposed by one MCP server, plus this user's access to it.
+
+    Tools: GET /mcp-servers/{id}/capabilities?type=tool, filtered to
+    enabled=true (same "approved" convention as get_catalog_models), sorted
+    alpha ascending by name.
+
+    User access: GET /mcp-servers/{id}/user-access has no email/identity
+    field to match on — only user_id, first_name, last_name. This matches
+    the signed-in user's `portkey_oid` claim against `user_id` (ASSUMED,
+    not confirmed against a real response — check the debug panel). Falls
+    back to the list's own `default_user_access` (allow/deny) when no
+    explicit per-user override entry is found, which is the documented
+    meaning of "no override" for this endpoint.
+    """
+    start_debug_trace()
+
+    capabilities = get_mcp_server_capabilities(server_id) or []
+    tools = [
+        {
+            "name": capability.get("name"),
+            "title": capability.get("title"),
+            "description": capability.get("description"),
+        }
+        for capability in capabilities
+        if capability.get("enabled")
+    ]
+    tools.sort(key=lambda tool: (tool["name"] or "").lower())
+
+    user_access = get_mcp_server_user_access(server_id)
+    default_access = (user_access or {}).get("default_user_access", "deny")
+    portkey_oid = claims.get("portkey_oid")
+    override = next(
+        (entry for entry in (user_access or {}).get("data", []) if entry.get("user_id") == portkey_oid),
+        None,
+    )
+    if override is not None:
+        user_access_positive = bool(override.get("enabled"))
+    else:
+        user_access_positive = default_access == "allow"
+    user_access_label = "Access allowed" if user_access_positive else "Access denied"
+
+    return McpServerDetailData(
+        tools=tools,
+        user_access_label=user_access_label,
+        user_access_positive=user_access_positive,
+        debug_calls=get_debug_trace(),
+    )
 
 
 def get_integration_tools() -> list[dict]:

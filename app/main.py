@@ -1,3 +1,5 @@
+from dataclasses import asdict
+
 import httpx
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -22,6 +24,7 @@ from app.data import (
     get_dashboard_data,
     get_display_name,
     get_integration_tools,
+    get_mcp_server_detail,
 )
 from app.token_panel import build_token_panel_response
 
@@ -115,6 +118,12 @@ def catalog(request: Request, tab: str = "models", claims: dict = Depends(requir
             "tab_data": tab_data,
         },
     )
+
+
+@app.get("/catalog/mcp-servers/{server_id}")
+def catalog_mcp_server_detail(server_id: str, claims: dict = Depends(require_login)) -> JSONResponse:
+    """Tool list + this user's access for one MCP server, lazy-loaded on row expand."""
+    return JSONResponse(asdict(get_mcp_server_detail(server_id, claims)))
 
 
 @app.get("/integrations")

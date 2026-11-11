@@ -337,6 +337,53 @@ def list_mcp_servers(workspace_id: str | None) -> list[dict] | None:
     return body.get("data", [])
 
 
+def get_mcp_server_capabilities(server_id: str) -> list[dict] | None:
+    """Return one MCP server's capabilities (tools/prompts/resources), or None.
+
+    GET /mcp-servers/{server_id}/capabilities, same host (AIGW_BASE_URL) and
+    admin token as list_mcp_servers. Filtered to type=tool server-side —
+    this app only shows the tool list, not prompts/resources/resource
+    templates. page_size maxes at 500 per the spec; not paginated further,
+    same simplification as get_mcp_server_user_access.
+    """
+    try:
+        token = _get_admin_access_token()
+    except httpx.HTTPError:
+        return None
+
+    body = _get_json(
+        f"{settings.aigw_base_url.rstrip('/')}/mcp-servers/{server_id}/capabilities",
+        f"GET /mcp-servers/{server_id}/capabilities",
+        headers={"Authorization": f"Bearer {token}"},
+        params={"type": "tool", "page_size": 500},
+    )
+    if body is None:
+        return None
+    return body.get("data", [])
+
+
+def get_mcp_server_user_access(server_id: str) -> dict | None:
+    """Return one MCP server's per-user access list, or None on failure.
+
+    GET /mcp-servers/{server_id}/user-access, same host/token as
+    list_mcp_servers. Returns the raw response dict (not just `data`) since
+    callers also need `default_user_access` (allow/deny) to fall back on
+    for a user with no explicit override. page_size maxes at 500 per the
+    spec; not paginated further — fine for a demo-scale user list.
+    """
+    try:
+        token = _get_admin_access_token()
+    except httpx.HTTPError:
+        return None
+
+    return _get_json(
+        f"{settings.aigw_base_url.rstrip('/')}/mcp-servers/{server_id}/user-access",
+        f"GET /mcp-servers/{server_id}/user-access",
+        headers={"Authorization": f"Bearer {token}"},
+        params={"page_size": 500},
+    )
+
+
 def get_with_user_jwt(path: str, access_token: str, params: dict | None = None) -> dict | None:
     """Call a gateway endpoint as the signed-in user, forwarding their access token.
 

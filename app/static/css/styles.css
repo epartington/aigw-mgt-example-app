@@ -333,6 +333,54 @@ body {
   border: 1px solid var(--border);
 }
 
+.mcp-expand-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 0 4px;
+}
+
+.mcp-server-detail-row td {
+  background: var(--bg);
+}
+
+.mcp-server-detail {
+  padding: 4px 8px;
+}
+
+.mcp-detail-access {
+  margin: 0 0 8px;
+}
+
+.mcp-tool-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mcp-tool-item {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.mcp-tool-item:last-child {
+  border-bottom: none;
+}
+
+.mcp-tool-name {
+  display: block;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.mcp-tool-description {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .setup-tab-buttons {
   display: flex;
   gap: 4px;
