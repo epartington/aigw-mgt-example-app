@@ -333,6 +333,12 @@ body {
   border: 1px solid var(--border);
 }
 
+.status-pill-red {
+  background: var(--bg);
+  color: var(--red-text);
+  border: 1px solid var(--red-text);
+}
+
 .mcp-expand-toggle {
   background: none;
   border: none;

@@ -15,6 +15,7 @@ _URL_FIELDS = {
     "aigw_base_url",
     "aigw_admin_base_url",
     "aigw_token_url",
+    "gateway_dataplane_url",
 }
 
 
@@ -61,6 +62,13 @@ class Settings(BaseSettings):
     # similar. Defaulted to the known managed value; override for a
     # self-hosted gateway.
     aigw_admin_base_url: str = "https://api.apps.paloaltonetworks.com/ai_gw/admin/v2"
+    # The self-hosted gateway's own data-plane host (GET /health for version/
+    # status) — a different, unrelated host from aigw_base_url/aigw_admin_base_url
+    # above, which are Strata Cloud Manager's managed-cloud admin APIs. This
+    # app never proxies chat traffic through it; it's only used for the
+    # topbar's gateway version/health pill (see app/gateway.py:gateway_health,
+    # same call this cluster's secure-chatbot-panw-gateway app makes).
+    gateway_dataplane_url: str = "http://airs-gw.airs-gw.svc.cluster.local:8787/v1"
     aigw_token_url: str
     aigw_client_id: str
     aigw_client_secret: str

@@ -25,6 +25,7 @@
 
     <div class="main">
       <header class="topbar">
+        <span class="status-pill status-pill-neutral" id="gateway-health-pill">gateway: checking&hellip;</span>
         <span class="topbar-user">{{ username }}</span>
         {% if auth_mode != 'header' %}
         <a class="topbar-signout" href="/signout">Sign out</a>
@@ -49,6 +50,7 @@
     </aside>
   </div>
   <script src="/static/js/token-sidecar.js" defer></script>
+  <script src="/static/js/gateway-health.js" defer></script>
   {% block extra_scripts %}{% endblock %}
 </body>
 </html>

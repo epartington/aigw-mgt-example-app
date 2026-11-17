@@ -344,6 +344,18 @@ endpoints are in scope).
     - This is server-level access (allow/deny the whole MCP server for a user),
       not per-tool. The spec has no per-user, per-tool permission; don't build
       a per-tool access column without a new endpoint to back it.
+- **Gateway version/health pill** (`app/gateway.py:gateway_health`, `GET /ui/gateway-health.json`
+  in `app/main.py`, `app/static/js/gateway-health.js`, rendered in `base.html`'s topbar): a small
+  status pill showing the self-hosted gateway's own `/health` response (status + version), fetched
+  client-side once per page load. **This is a separate, unrelated host from `aigw_base_url`/
+  `aigw_admin_base_url`** — those are Strata Cloud Manager's managed-cloud admin APIs this app
+  otherwise calls; the pill hits the self-hosted gateway's data-plane host directly
+  (`gateway_dataplane_url`, new setting in `app/config.py`, defaults to
+  `http://airs-gw.airs-gw.svc.cluster.local:8787/v1` — the in-cluster address of this project's own
+  sibling GKE deployment). Unauthenticated against the gateway (no bearer token sent, matching
+  `secure-chatbot-panw-gateway`'s identical `gateway_health()`), but the `/ui/gateway-health.json`
+  endpoint itself is gated by `Depends(require_login)` like every other `/ui/*` route — not
+  recorded in the admin-API debug trace, since it is an unrelated call.
 - **Open decisions (not yet made):** what "agents" maps to in the gateway API (no
   agents resource exists in the spec yet); the usage-limit-policy matching logic
   when a workspace has more than one active cost policy; a real value for

@@ -18,6 +18,7 @@ from app.auth import (
     start_login,
 )
 from app.config import settings
+from app.gateway import gateway_health
 from app.data import (
     get_catalog_mcp_tools,
     get_catalog_models,
@@ -155,6 +156,16 @@ def help_page(request: Request, claims: dict = Depends(require_login)):
 @app.get("/ui/token.json")
 def ui_token(request: Request, claims: dict = Depends(require_login)):
     return build_token_panel_response(get_current_access_token(request))
+
+
+@app.get("/ui/gateway-health.json")
+def ui_gateway_health(claims: dict = Depends(require_login)) -> dict:
+    """Topbar pill data: the self-hosted gateway's own /health, not the admin
+    APIs this app otherwise calls. Same call/shape as this cluster's
+    secure-chatbot-panw-gateway app.
+    """
+    ok, detail = gateway_health()
+    return {"ok": ok, "detail": detail}
 
 
 @app.post("/ui/token/refresh")

@@ -398,3 +398,22 @@ def get_with_user_jwt(path: str, access_token: str, params: dict | None = None) 
         headers={"Authorization": f"Bearer {access_token}"},
         params=params,
     )
+
+
+def gateway_health() -> tuple[bool, dict | str]:
+    """GET /health on the self-hosted gateway's data plane (settings.gateway_dataplane_url).
+
+    Unauthenticated, unrelated host to aigw_base_url/aigw_admin_base_url
+    above — not recorded in the admin-API debug trace. Same call and
+    return shape as this cluster's secure-chatbot-panw-gateway app
+    (gateway_chat.gateway_health), used only to show gateway
+    version/status in the topbar pill.
+    """
+    try:
+        response = httpx.get(f"{settings.gateway_dataplane_url.rstrip('/')}/health", timeout=10.0)
+    except httpx.HTTPError as exc:
+        return False, str(exc)
+    try:
+        return response.status_code == 200, response.json()
+    except ValueError:
+        return False, f"HTTP {response.status_code}: {response.text[:200]}"
