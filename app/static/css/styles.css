@@ -73,6 +73,13 @@ body {
   border-right: 3px solid var(--accent);
 }
 
+.sidenav-version {
+  padding: 4px 20px 10px;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
 /* Main column */
 .main {
   flex: 1;

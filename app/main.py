@@ -1,4 +1,6 @@
 from dataclasses import asdict
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _package_version
 
 import httpx
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -36,6 +38,13 @@ templates = Jinja2Templates(directory="app/templates")
 # Lets base.html hide the Sign out links in header mode — clicking one
 # can't end a session this app doesn't own.
 templates.env.globals["auth_mode"] = settings.auth_mode
+# Single source of truth is pyproject.toml's version (see CLAUDE.md "Versioning") — shown
+# in the sidenav so the running UI visibly states which release is deployed. Falls back to
+# "dev" when not installed as a package (e.g. running straight from source without pip install).
+try:
+    templates.env.globals["app_version"] = _package_version("aigw-mgt-example-app")
+except PackageNotFoundError:
+    templates.env.globals["app_version"] = "dev"
 
 
 @app.exception_handler(RedirectToLogin)
