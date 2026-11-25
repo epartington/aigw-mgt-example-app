@@ -362,3 +362,18 @@ endpoints are in scope).
   `TOKEN_SIDECAR_CAPABILITY_SCOPE` (currently unset — which of the `scope` claim's
   values, if any, should be highlighted); real download links for the Claude Code
   token-helper table.
+
+## Versioning
+
+This app is deployed as copies in downstream cloud infra repos (e.g. `cicd-k8s-ai-gw-aks`'s
+`apps/aigw-portal`, and sibling EKS/GKE apps repos) — `pyproject.toml`'s `version` field plus a
+matching git tag here (`vX.Y.Z`) is how a downstream copy's `CLAUDE.md` can say exactly which
+upstream version it synced, instead of only a commit SHA. Convention:
+
+- Bump `pyproject.toml`'s `version` (semver) for any release-worthy change — a new feature, a
+  meaningful fix, not every tiny edit.
+- Tag that commit `vX.Y.Z` (`git tag -a vX.Y.Z -m "..."`) and push the tag.
+- **Before committing a code change here, ask whether this change warrants a version bump** —
+  don't bump silently, and don't skip asking just because a change looks small.
+- A downstream repo's Docker image should be tagged to match (`ghcr.io/.../aigw-portal:X.Y.Z`,
+  not a rolling `:latest`), so the running image tag alone tells you the synced version.
