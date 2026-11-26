@@ -194,6 +194,86 @@ def resolve_workspace_id(workspace_slug: str) -> str | None:
     return None
 
 
+def list_gateways(workspace_slug: str) -> list[dict]:
+    """Return every gateway deployment for this workspace, with resolved details.
+
+    Same GET /deployments + GET /deployments/{id} calls as
+    resolve_workspace_id, but keeps every deployment instead of stopping
+    at the first slug match — a workspace can have more than one gateway.
+    Each returned dict: name, connection_status (healthy/unhealthy/other,
+    drives the dashboard's health pill color), gateway_url (from the
+    detail call's gateway_base_url field), workspace_id (this gateway's
+    own match of workspace_slug against its workspaces[] list — matched
+    per gateway, not reused from elsewhere, since deployments resolve
+    independently). Returns [] on any failure, same convention as the
+    rest of this module.
+    """
+    try:
+        token = _get_admin_access_token()
+    except httpx.HTTPError:
+        return []
+
+    list_body = _get_json(
+        f"{settings.aigw_admin_base_url.rstrip('/')}/deployments",
+        "GET /deployments",
+        headers={"Authorization": f"Bearer {token}"},
+        params={"workspace_slug": workspace_slug},
+    )
+    if list_body is None:
+        return []
+
+    gateways = []
+    for deployment in list_body.get("data", []):
+        deployment_id = deployment.get("id")
+        detail_body = _get_json(
+            f"{settings.aigw_admin_base_url.rstrip('/')}/deployments/{deployment_id}",
+            f"GET /deployments/{deployment_id}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        gateway_url = None
+        workspace_id = None
+        if detail_body is not None:
+            gateway_url = detail_body.get("gateway_base_url")
+            for workspace in detail_body.get("workspaces", []):
+                if workspace.get("slug") == workspace_slug:
+                    workspace_id = workspace.get("id")
+                    break
+        gateways.append(
+            {
+                "name": deployment.get("name"),
+                "connection_status": deployment.get("connection_status"),
+                "gateway_url": gateway_url,
+                "workspace_id": workspace_id,
+            }
+        )
+    return gateways
+
+
+def get_workspace_name(workspace_id: str) -> str | None:
+    """Resolve a workspace UUID to its display name, or None on failure.
+
+    GET /workspaces/{id} on settings.panw_workspace_api_base_url — a
+    fourth host, separate from aigw_base_url/aigw_admin_base_url/
+    gateway_dataplane_url. Auth is unconfirmed against a real response;
+    sent as the same admin client-credentials token as every other call
+    here, since it's the same PANW/Strata auth domain — check the debug
+    panel if this returns None unexpectedly.
+    """
+    try:
+        token = _get_admin_access_token()
+    except httpx.HTTPError:
+        return None
+
+    body = _get_json(
+        f"{settings.panw_workspace_api_base_url.rstrip('/')}/workspaces/{workspace_id}",
+        f"GET /workspaces/{workspace_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    if body is None:
+        return None
+    return body.get("name")
+
+
 def get_cost_usage_limit_policy(workspace_id: str) -> dict | None:
     """Return the workspace's first active cost-type usage-limit policy, or None.
 

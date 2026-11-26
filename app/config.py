@@ -16,6 +16,7 @@ _URL_FIELDS = {
     "aigw_admin_base_url",
     "aigw_token_url",
     "gateway_dataplane_url",
+    "panw_workspace_api_base_url",
 }
 
 
@@ -69,6 +70,12 @@ class Settings(BaseSettings):
     # topbar's gateway version/health pill (see app/gateway.py:gateway_health,
     # same call this cluster's secure-chatbot-panw-gateway app makes).
     gateway_dataplane_url: str = "http://airs-gw.airs-gw.svc.cluster.local:8787/v1"
+    # Resolves a workspace UUID (see app/gateway.py:get_workspace_name) to its display
+    # name, for the dashboard's "Workspace Name(s)" cell — a fourth host, separate from
+    # aigw_base_url/aigw_admin_base_url/gateway_dataplane_url above. Auth is sent as the
+    # same admin client-credentials token used everywhere else in this file; unconfirmed
+    # against a real response, check the debug panel.
+    panw_workspace_api_base_url: str = "https://api.sase.paloaltonetworks.com/airs/workspace/v1"
     aigw_token_url: str
     aigw_client_id: str
     aigw_client_secret: str

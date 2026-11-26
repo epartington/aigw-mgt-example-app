@@ -14,6 +14,8 @@ from app.gateway import (
     get_mcp_server_user_access,
     get_usage_limit_policy_entity,
     get_debug_trace,
+    get_workspace_name,
+    list_gateways,
     list_integrations,
     list_mcp_servers,
     resolve_workspace_id,
@@ -35,6 +37,7 @@ class DashboardData:
     budget_limit: float
     budget_used: float
     budget_unit: str
+    gateways: list[dict]
     debug_calls: list[dict]
 
 
@@ -350,15 +353,60 @@ def get_integration_tools() -> list[dict]:
     ]
 
 
+def _gateway_health_class(connection_status: str | None) -> str:
+    """Return the status-pill class for a gateway's connection_status.
+
+    healthy -> green, unhealthy -> red, anything else (including
+    missing) -> neutral/grey. Not a general status heuristic like
+    _is_positive_status — this field only has these two documented
+    values, so anything else is a genuinely unknown state, not "probably
+    fine".
+    """
+    status = (connection_status or "").strip().lower()
+    if status == "healthy":
+        return "status-pill-green"
+    if status == "unhealthy":
+        return "status-pill-red"
+    return "status-pill-neutral"
+
+
 def get_dashboard_data(claims: dict) -> DashboardData:
     start_debug_trace()
 
     name = get_display_name(claims)
     workspace_slug = get_workspace_slug(claims)
 
-    # GET /policies/usage-limits's workspace_id param rejects the slug —
-    # it wants the UUID. Resolve it once, reuse for both policy calls.
-    workspace_id = resolve_workspace_id(workspace_slug) if workspace_slug else None
+    # Lists every gateway deployment for this workspace in one pass (see
+    # app/gateway.py:list_gateways) — this already makes the same
+    # GET /deployments + GET /deployments/{id} calls resolve_workspace_id
+    # would, so the workspace UUID below is derived from these results
+    # instead of a second, redundant resolve_workspace_id() round trip.
+    gateways_raw = list_gateways(workspace_slug) if workspace_slug else []
+    workspace_id = next(
+        (g["workspace_id"] for g in gateways_raw if g.get("workspace_id")), None
+    )
+
+    workspace_name_cache: dict[str, str | None] = {}
+    gateways = []
+    for g in gateways_raw:
+        gateway_workspace_id = g.get("workspace_id")
+        if gateway_workspace_id:
+            if gateway_workspace_id not in workspace_name_cache:
+                workspace_name_cache[gateway_workspace_id] = get_workspace_name(
+                    gateway_workspace_id
+                )
+            workspace_name = workspace_name_cache[gateway_workspace_id] or "Unknown"
+        else:
+            workspace_name = "Unknown"
+        gateways.append(
+            {
+                "name": g.get("name") or "Unknown",
+                "url": g.get("gateway_url") or "Unknown",
+                "health_label": g.get("connection_status") or "Unknown",
+                "health_class": _gateway_health_class(g.get("connection_status")),
+                "workspace_name": workspace_name,
+            }
+        )
 
     policy = get_cost_usage_limit_policy(workspace_id) if workspace_id else None
 
@@ -418,5 +466,6 @@ def get_dashboard_data(claims: dict) -> DashboardData:
         budget_limit=budget_limit,
         budget_used=budget_used,
         budget_unit="USD",
+        gateways=gateways,
         debug_calls=debug_calls,
     )

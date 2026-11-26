@@ -41,6 +41,41 @@
   {% endif %}
 </div>
 
+<div class="tile-row">
+  <div class="tile">
+    <div class="tile-label">Gateway Name(s)</div>
+    {% for g in data.gateways %}
+    <div class="tile-list-item">{{ g.name }}</div>
+    {% else %}
+    <div class="tile-value-small">Not configured</div>
+    {% endfor %}
+  </div>
+  <div class="tile">
+    <div class="tile-label">Gateway URL(s)</div>
+    {% for g in data.gateways %}
+    <div class="tile-list-item">{{ g.url }}</div>
+    {% else %}
+    <div class="tile-value-small">Not configured</div>
+    {% endfor %}
+  </div>
+  <div class="tile">
+    <div class="tile-label">Gateway Health</div>
+    {% for g in data.gateways %}
+    <div class="tile-list-item"><span class="status-pill {{ g.health_class }}">{{ g.health_label }}</span></div>
+    {% else %}
+    <div class="tile-value-small">Not configured</div>
+    {% endfor %}
+  </div>
+  <div class="tile">
+    <div class="tile-label">Workspace Name(s)</div>
+    {% for g in data.gateways %}
+    <div class="tile-list-item">{{ g.workspace_name }}</div>
+    {% else %}
+    <div class="tile-value-small">Not configured</div>
+    {% endfor %}
+  </div>
+</div>
+
 <div class="tile tile-wide debug-tile">
   <div class="tile-label">Debug: API calls made for this page</div>
   {% for call in data.debug_calls %}

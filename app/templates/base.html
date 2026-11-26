@@ -16,7 +16,7 @@
         <a class="sidenav-item {{ 'active' if active_nav == 'integrations' }}" href="/integrations">Integrations</a>
       </div>
       <div class="sidenav-bottom">
-        <div class="sidenav-version">v{{ app_version }}</div>
+        <div class="sidenav-version"><span class="sidenav-version-pill">v{{ app_version }}</span></div>
         <a class="sidenav-item {{ 'active' if active_nav == 'help' }}" href="/help">Help</a>
         {% if auth_mode != 'header' %}
         <a class="sidenav-item" href="/signout">Sign out</a>
