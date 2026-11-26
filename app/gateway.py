@@ -284,27 +284,27 @@ def get_workspace_name(workspace_id: str) -> str | None:
     return body.get("name")
 
 
-def get_cost_usage_limit_policy(workspace_id: str) -> dict | None:
-    """Return the workspace's first active cost-type usage-limit policy, or None.
+def list_cost_usage_limit_policies(workspace_id: str) -> list[dict]:
+    """Return every active cost-type usage-limit policy for the workspace.
 
     workspace_id must be the resolved UUID (see resolve_workspace_id), not
     the portkey_workspace slug — the endpoint rejects a slug outright.
 
     Calls GET /policies/usage-limits, filtered server-side with
-    type=cost&status=active. Returns None on failure or if the workspace
-    has no such policy — the caller shows "Not configured" instead of a
-    guessed value.
-
-    NOTE: if a workspace has more than one active cost policy, this
-    returns whichever the API lists first. Picking the *right* one by
-    matching its conditions/group_by against the signed-in user is the
-    open "usage-limit-policy matching logic" item in CLAUDE.md — not
-    solved here yet.
+    type=cost&status=active. Returns [] on failure or if the workspace has
+    no such policy — the caller shows "Not configured" instead of a
+    guessed value. A workspace can have more than one active cost policy
+    (e.g. one per team); the dashboard's "max/alert" cell lists every
+    policy's `name` alongside its limit, not just the first. Each
+    returned dict is the raw policy object (`id`, `name`, `credit_limit`,
+    `alert_threshold`, `periodic_reset`, `next_usage_reset_at`, ...),
+    per the published spec
+    (portkey.ai/docs/aigw/api-reference/usage-limit-policies/list-usage-limits-policies).
     """
     try:
         token = _get_admin_access_token()
     except httpx.HTTPError:
-        return None
+        return []
 
     body = _get_json(
         f"{settings.aigw_base_url.rstrip('/')}/policies/usage-limits",
@@ -313,9 +313,8 @@ def get_cost_usage_limit_policy(workspace_id: str) -> dict | None:
         params={"workspace_id": workspace_id, "type": "cost", "status": "active"},
     )
     if body is None:
-        return None
-    data = body.get("data", [])
-    return data[0] if data else None
+        return []
+    return body.get("data", [])
 
 
 def get_usage_limit_policy_entity(policy_id: str, local_part: str) -> dict | None:

@@ -7,10 +7,10 @@
   <div class="tile">
     <div class="tile-label">Model tier</div>
     <div class="tile-value">{{ data.model_tier }}</div>
-    {% if data.credit_alert_value %}
-    <div class="tile-subvalue-label">{{ data.credit_alert_label }}</div>
-    <div class="tile-subvalue">{{ data.credit_alert_value }}</div>
-    {% endif %}
+    {% for b in data.budgets %}
+    <div class="tile-subvalue-label">{{ b.label }}</div>
+    <div class="tile-subvalue">{{ b.value }} - {{ b.name }}</div>
+    {% endfor %}
   </div>
   <div class="tile">
     <div class="tile-label">{{ data.weekly_usage_label }}</div>

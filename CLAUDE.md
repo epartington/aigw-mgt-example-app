@@ -227,8 +227,17 @@ endpoints are in scope).
     in the spec pairing a slug with its UUID. `AIGW_ADMIN_BASE_URL` defaults to
     the documented managed host; override only for a self-hosted gateway.
   - **Model tier cell:** `GET /policies/usage-limits?workspace_id=<resolved UUID>
-    &type=cost&status=active` — the first matching policy's `credit_limit` and
-    `alert_threshold` render as "credit_limit / alert_threshold" below the tier.
+    &type=cost&status=active` via `list_cost_usage_limit_policies` — a workspace can
+    have more than one active cost policy (e.g. one per team), so **every** matching
+    policy renders as its own "credit_limit / alert_threshold - name" line below the
+    tier (`name` is a documented field on the policy object, confirmed against the
+    published spec at
+    portkey.ai/docs/aigw/api-reference/usage-limit-policies/list-usage-limits-policies),
+    not just the first. Everything else driven by "the policy" (usage tile, reset
+    period, budget-consumption bar below) still keys off the first policy in the list
+    — same single-policy simplification as before, just no longer a second, redundant
+    network call now that `list_cost_usage_limit_policies` already fetches every
+    policy in one request.
   - **Usage tile and budget tile share one entity lookup:** `GET
     /policies/usage-limits/{id}/entities`, matched client-side (the endpoint has
     no filter param for this) against the identity claim's email with

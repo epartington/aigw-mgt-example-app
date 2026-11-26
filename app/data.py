@@ -8,13 +8,13 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from app.gateway import (
-    get_cost_usage_limit_policy,
     get_integration_models,
     get_mcp_server_capabilities,
     get_mcp_server_user_access,
     get_usage_limit_policy_entity,
     get_debug_trace,
     get_workspace_name,
+    list_cost_usage_limit_policies,
     list_gateways,
     list_integrations,
     list_mcp_servers,
@@ -27,8 +27,7 @@ from app.gateway import (
 class DashboardData:
     username: str
     model_tier: str
-    credit_alert_label: str | None
-    credit_alert_value: str | None
+    budgets: list[dict]
     weekly_usage_label: str
     weekly_usage: str
     reset_period: str
@@ -416,18 +415,28 @@ def get_dashboard_data(claims: dict) -> DashboardData:
             }
         )
 
-    policy = get_cost_usage_limit_policy(workspace_id) if workspace_id else None
+    # A workspace can have more than one active cost policy (e.g. one per
+    # team) — the Model tier tile's "max/alert" cell lists every one of
+    # them, each paired with its name, not just the first. Everything
+    # else below (usage tile, reset period, budget bar) still keys off a
+    # single "primary" policy — the first one listed — same simplification
+    # as before, just no longer a separate network call (list_cost_usage_
+    # limit_policies already fetches every policy in one request).
+    policies = list_cost_usage_limit_policies(workspace_id) if workspace_id else []
+    policy = policies[0] if policies else None
 
-    credit_alert_label = None
-    credit_alert_value = None
-    if policy and policy.get("credit_limit") is not None:
-        alert_threshold = policy.get("alert_threshold")
+    budgets = []
+    for p in policies:
+        if p.get("credit_limit") is None:
+            continue
+        alert_threshold = p.get("alert_threshold")
         if alert_threshold is not None:
-            credit_alert_label = "max/alert"
-            credit_alert_value = f"{policy['credit_limit']} / {alert_threshold}"
+            label = "max/alert"
+            value = f"{p['credit_limit']} / {alert_threshold}"
         else:
-            credit_alert_label = "max"
-            credit_alert_value = str(policy["credit_limit"])
+            label = "max"
+            value = str(p["credit_limit"])
+        budgets.append({"label": label, "value": value, "name": p.get("name") or "Unknown"})
 
     # periodic_reset ("weekly" / "monthly") drives both the usage-tile
     # label and the reset-period text below — whatever the real policy
@@ -464,8 +473,7 @@ def get_dashboard_data(claims: dict) -> DashboardData:
     return DashboardData(
         username=name,
         model_tier=get_model_tier(claims),
-        credit_alert_label=credit_alert_label,
-        credit_alert_value=credit_alert_value,
+        budgets=budgets,
         weekly_usage_label=weekly_usage_label,
         weekly_usage=weekly_usage,
         reset_period=reset_period,
