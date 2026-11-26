@@ -1,6 +1,7 @@
 from dataclasses import asdict
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _package_version
+from urllib.parse import urlparse
 
 import httpx
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -46,6 +47,10 @@ try:
     templates.env.globals["app_version"] = _package_version("aigw-mgt-example-app")
 except PackageNotFoundError:
     templates.env.globals["app_version"] = "dev"
+# host:port only (no scheme/path) — shown next to the topbar's health pill so it's
+# clear which gateway that pill is actually checking (gateway_health always hits
+# this exact host, see app/gateway.py).
+templates.env.globals["gateway_domain"] = urlparse(settings.gateway_dataplane_url).netloc
 
 
 @app.exception_handler(RedirectToLogin)

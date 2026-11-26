@@ -10,13 +10,15 @@
   <div class="layout">
     <nav class="sidenav">
       <div class="sidenav-top">
-        <div class="sidenav-brand">AI Developer Portal</div>
+        <div class="sidenav-brand">
+          <span>AI Developer Portal</span>
+          <span class="sidenav-version-pill">v{{ app_version }}</span>
+        </div>
         <a class="sidenav-item {{ 'active' if active_nav == 'dashboard' }}" href="/dashboard">Dashboard</a>
         <a class="sidenav-item {{ 'active' if active_nav == 'catalog' }}" href="/catalog">Catalog</a>
         <a class="sidenav-item {{ 'active' if active_nav == 'integrations' }}" href="/integrations">Integrations</a>
       </div>
       <div class="sidenav-bottom">
-        <div class="sidenav-version"><span class="sidenav-version-pill">v{{ app_version }}</span></div>
         <a class="sidenav-item {{ 'active' if active_nav == 'help' }}" href="/help">Help</a>
         {% if auth_mode != 'header' %}
         <a class="sidenav-item" href="/signout">Sign out</a>
@@ -26,6 +28,7 @@
 
     <div class="main">
       <header class="topbar">
+        <span class="topbar-gateway-domain">{{ gateway_domain }}</span>
         <span class="status-pill status-pill-neutral" id="gateway-health-pill">gateway: checking&hellip;</span>
         <span class="topbar-user">{{ username }}</span>
         {% if auth_mode != 'header' %}

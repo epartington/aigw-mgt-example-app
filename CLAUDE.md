@@ -409,7 +409,16 @@ endpoints are in scope).
   sibling GKE deployment). Unauthenticated against the gateway (no bearer token sent, matching
   `secure-chatbot-panw-gateway`'s identical `gateway_health()`), but the `/ui/gateway-health.json`
   endpoint itself is gated by `Depends(require_login)` like every other `/ui/*` route — not
-  recorded in the admin-API debug trace, since it is an unrelated call.
+  recorded in the admin-API debug trace, since it is an unrelated call. The topbar shows
+  `gateway_domain` (a Jinja global set once in `app/main.py` from
+  `urlparse(settings.gateway_dataplane_url).netloc`, host:port only, no scheme/path)
+  immediately to the left of the pill, so it's visible which gateway that pill is actually
+  checking — otherwise a `healthy` pill gives no indication of which gateway it's for.
+- **Version pill placement** (`app/templates/base.html`): shown next to "AI Developer
+  Portal" in the sidenav brand row (`.sidenav-brand` is a flex row,
+  `justify-content: space-between`), not at the bottom of the sidenav below Help/Sign
+  out — the brand row renders on every authenticated page via `base.html`, same
+  `.sidenav-version-pill` styling as before (moved, not restyled).
 - **Open decisions (not yet made):** what "agents" maps to in the gateway API (no
   agents resource exists in the spec yet); the usage-limit-policy matching logic
   when a workspace has more than one active cost policy; a real value for
