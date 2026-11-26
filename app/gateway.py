@@ -201,8 +201,9 @@ def list_gateways(workspace_slug: str) -> list[dict]:
     resolve_workspace_id, but keeps every deployment instead of stopping
     at the first slug match — a workspace can have more than one gateway.
     Each returned dict: name, connection_status (healthy/unhealthy/other,
-    drives the dashboard's health pill color), gateway_url (from the
-    detail call's gateway_base_url field), workspace_id (this gateway's
+    drives the dashboard's health pill color), gateway_url (confirmed
+    against a real response to live at auth_settings.gateway_base_url in
+    the detail call, not a top-level field), workspace_id (this gateway's
     own match of workspace_slug against its workspaces[] list — matched
     per gateway, not reused from elsewhere, since deployments resolve
     independently). Returns [] on any failure, same convention as the
@@ -233,7 +234,7 @@ def list_gateways(workspace_slug: str) -> list[dict]:
         gateway_url = None
         workspace_id = None
         if detail_body is not None:
-            gateway_url = detail_body.get("gateway_base_url")
+            gateway_url = (detail_body.get("auth_settings") or {}).get("gateway_base_url")
             for workspace in detail_body.get("workspaces", []):
                 if workspace.get("slug") == workspace_slug:
                     workspace_id = workspace.get("id")
@@ -249,15 +250,17 @@ def list_gateways(workspace_slug: str) -> list[dict]:
     return gateways
 
 
-def get_workspace_name(workspace_id: str) -> str | None:
-    """Resolve a workspace UUID to its display name, or None on failure.
+def get_workspace_name(workspace_slug: str) -> str | None:
+    """Resolve a workspace slug to its display name, or None on failure.
 
-    GET /workspaces/{id} on settings.panw_workspace_api_base_url — a
+    GET /workspaces/{slug} on settings.panw_workspace_api_base_url — a
     fourth host, separate from aigw_base_url/aigw_admin_base_url/
-    gateway_dataplane_url. Auth is unconfirmed against a real response;
-    sent as the same admin client-credentials token as every other call
-    here, since it's the same PANW/Strata auth domain — check the debug
-    panel if this returns None unexpectedly.
+    gateway_dataplane_url. Confirmed against a real response: the UUID
+    path form (/workspaces/{id}) 403s with this service account's token;
+    the slug path form returns 200 — so this takes workspace_slug (the
+    portkey_workspace claim), not the UUID resolved elsewhere in this
+    module. Auth is otherwise the same admin client-credentials token as
+    every other call here, same PANW/Strata auth domain.
     """
     try:
         token = _get_admin_access_token()
@@ -265,8 +268,8 @@ def get_workspace_name(workspace_id: str) -> str | None:
         return None
 
     body = _get_json(
-        f"{settings.panw_workspace_api_base_url.rstrip('/')}/workspaces/{workspace_id}",
-        f"GET /workspaces/{workspace_id}",
+        f"{settings.panw_workspace_api_base_url.rstrip('/')}/workspaces/{workspace_slug}",
+        f"GET /workspaces/{workspace_slug}",
         headers={"Authorization": f"Bearer {token}"},
     )
     if body is None:

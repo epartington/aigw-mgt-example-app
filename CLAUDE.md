@@ -278,19 +278,21 @@ endpoints are in scope).
     instead of stopping at the first slug match — `get_dashboard_data` now derives its
     one `workspace_id` (for the budget/usage-limit calls) from these results instead of
     a second, redundant `resolve_workspace_id()` round trip. Field mapping: Name=`name`,
-    URL=`gateway_base_url` (from the detail call), Health=`connection_status`
+    URL=`auth_settings.gateway_base_url` (from the detail call — **confirmed against a
+    real response not to be a top-level field**), Health=`connection_status`
     (`healthy`→green pill, `unhealthy`→red pill, anything else→neutral/grey, via
-    `_gateway_health_class`), Workspace Name is resolved per-gateway: match
-    `workspace_slug` against the detail call's `workspaces[]` to get that gateway's own
-    workspace UUID, then `GET /workspaces/{id}` on a **fourth host**,
-    `settings.panw_workspace_api_base_url` (default
-    `https://api.sase.paloaltonetworks.com/airs/workspace/v1`) → `name`. **Auth for that
-    workspace-name call is an unconfirmed guess** — sent as the same admin
-    client-credentials token as every other call in `app/gateway.py`, since it's the same
-    PANW/Strata auth domain; check the debug panel's new `GET /workspaces/{id}` entries
-    before trusting it. Workspace names are resolved once per distinct `workspace_id`
-    (small local cache in `get_dashboard_data`), not once per gateway, since gateways
-    commonly share a workspace.
+    `_gateway_health_class`). Workspace Name: `GET /workspaces/{slug}` on a **fourth
+    host**, `settings.panw_workspace_api_base_url` (default
+    `https://api.sase.paloaltonetworks.com/airs/workspace/v1`) → `name`. **Confirmed
+    against a real response: this endpoint takes the workspace *slug*, not the UUID** —
+    the UUID path form (`/workspaces/{id}`) 403s with this service account's token, the
+    slug form (`/workspaces/{workspace_slug}`) returns 200. `get_workspace_name` takes
+    `workspace_slug` accordingly; every gateway shares the signed-in user's slug, so this
+    is one call per page load, not one per gateway. A gateway whose own
+    `GET /deployments/{id}` `workspaces[]` list has no entry matching `workspace_slug`
+    still shows "Unknown" for that row — same meaning as before, just no longer driving
+    the lookup itself. Auth is the same admin client-credentials token as every other
+    call in `app/gateway.py`.
 - **Claude Code setup card** (`app/data.py:get_claude_code_setup_steps`, rendered in
   `app/templates/integrations.html`): a richer step-by-step layout than Cursor/VS Code,
   which still use the plain intro/command/note format — the template branches on
