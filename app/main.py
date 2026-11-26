@@ -24,6 +24,7 @@ from app.gateway import gateway_health
 from app.data import (
     get_catalog_mcp_tools,
     get_catalog_models,
+    get_catalog_v1_models,
     get_dashboard_data,
     get_display_name,
     get_integration_tools,
@@ -116,8 +117,13 @@ def dashboard(request: Request, claims: dict = Depends(require_login)):
 
 @app.get("/catalog")
 def catalog(request: Request, tab: str = "models", claims: dict = Depends(require_login)):
-    active_tab = tab if tab in {"models", "mcp-tools"} else "models"
-    tab_data = get_catalog_models(claims) if active_tab == "models" else get_catalog_mcp_tools(claims)
+    active_tab = tab if tab in {"models", "v1-models", "mcp-tools"} else "models"
+    if active_tab == "models":
+        tab_data = get_catalog_models(claims)
+    elif active_tab == "v1-models":
+        tab_data = get_catalog_v1_models(get_current_access_token(request))
+    else:
+        tab_data = get_catalog_mcp_tools(claims)
     return templates.TemplateResponse(
         request,
         "catalog.html",

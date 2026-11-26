@@ -400,6 +400,32 @@ def get_integration_models(slug: str) -> list[dict] | None:
     return body.get("models", [])
 
 
+def list_gateway_models(access_token: str) -> list[dict] | None:
+    """Return the models visible to the signed-in user, or None on failure.
+
+    GET /v1/models on the self-hosted gateway's own data-plane host
+    (settings.gateway_dataplane_url — the same host gateway_health uses,
+    unrelated to aigw_base_url/aigw_admin_base_url), forwarding the
+    signed-in user's own access token rather than the admin
+    client-credentials token. Per the published spec
+    (portkey.ai/docs/aigw/api-reference/models/list-models) this takes no
+    workspace param — the gateway resolves the caller's workspace from
+    the token's own portkey_workspace claim, so there's no
+    resolve_workspace_id() call here, unlike every admin-API function
+    above. Response fields are just id/created/object/owned_by — no
+    enabled/status field, since every model this returns is already
+    scoped to what this user can see.
+    """
+    body = _get_json(
+        f"{settings.gateway_dataplane_url.rstrip('/')}/models",
+        "GET /v1/models",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    if body is None:
+        return None
+    return body.get("data", [])
+
+
 def list_mcp_servers(workspace_id: str | None) -> list[dict] | None:
     """Return the MCP servers list, or None on failure.
 

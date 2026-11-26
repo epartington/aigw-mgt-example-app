@@ -15,6 +15,7 @@ from app.gateway import (
     get_debug_trace,
     get_workspace_name,
     list_cost_usage_limit_policies,
+    list_gateway_models,
     list_gateways,
     list_integrations,
     list_mcp_servers,
@@ -214,6 +215,44 @@ def get_catalog_models(claims: dict) -> CatalogTabData:
                 }
             )
 
+    rows.sort(key=lambda row: (row["model"] or "").lower())
+    return CatalogTabData(rows=rows, debug_calls=get_debug_trace())
+
+
+def get_catalog_v1_models(access_token: str | None) -> CatalogTabData:
+    """Models visible to the signed-in user via GET /v1/models.
+
+    Same table layout as get_catalog_models, different source: this calls
+    the self-hosted gateway's own data-plane host
+    (gateway_dataplane_url), forwarding the user's own access token
+    instead of the admin client-credentials token — the gateway resolves
+    the caller's workspace from the token's own portkey_workspace claim,
+    so there's no resolve_workspace_id() call here, unlike every other
+    catalog tab. Field mapping straight from the spec
+    (portkey.ai/docs/aigw/api-reference/models/list-models): Model=`id`,
+    Provider=`owned_by`. No price or status field exists on this
+    response — every row shows "—" for Input/Output per 1M tokens and the
+    same "enabled" green pill as get_catalog_models's accessible-models
+    convention, since every model /v1/models returns is already scoped
+    to what this user can see.
+    """
+    start_debug_trace()
+
+    if not access_token:
+        return CatalogTabData(rows=[], debug_calls=get_debug_trace())
+
+    models = list_gateway_models(access_token) or []
+    rows = [
+        {
+            "model": model.get("id"),
+            "provider": model.get("owned_by"),
+            "input_per_1m": None,
+            "output_per_1m": None,
+            "status": "enabled",
+            "status_positive": True,
+        }
+        for model in models
+    ]
     rows.sort(key=lambda row: (row["model"] or "").lower())
     return CatalogTabData(rows=rows, debug_calls=get_debug_trace())
 

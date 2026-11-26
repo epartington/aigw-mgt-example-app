@@ -315,9 +315,9 @@ endpoints are in scope).
   scoped via `base.html`'s `extra_scripts` block) all show the same `settings.json`
   snippet, since its content doesn't vary by OS. `XXX` and `<XXXX>` in that snippet are
   intentional placeholders, not real values — don't fill them in without being asked.
-- **Catalog page** (`GET /catalog`, `app/templates/catalog.html`): Models and MCP Tools
-  tabs, switched via `?tab=` (a full page reload per tab, not client-side JS — each tab
-  needs its own data and its own debug trace). Both tabs call
+- **Catalog page** (`GET /catalog`, `app/templates/catalog.html`): Models, /v1/models, and
+  MCP Tools tabs, switched via `?tab=` (a full page reload per tab, not client-side JS —
+  each tab needs its own data and its own debug trace). All three tabs call
   `start_debug_trace()`/`get_debug_trace()` from `app/gateway.py` and render the same
   collapsible per-call debug panel used on the dashboard.
   - **Models tab** (`app/data.py:get_catalog_models`) is wired to real calls, both on
@@ -345,6 +345,22 @@ endpoints are in scope).
       tokens — don't assume the column headers' "/1M tokens" framing is already
       correct; confirm against real numbers once this tab is checked against a live
       tenant, and scale the display then if needed.
+  - **/v1/models tab** (`app/data.py:get_catalog_v1_models`, `app/gateway.py:
+    list_gateway_models`) shares the Models tab's table layout but is a genuinely
+    different call: `GET /v1/models` on the self-hosted gateway's own data-plane host
+    (`settings.gateway_dataplane_url` — the same unauthenticated-by-default host
+    `gateway_health` uses, unrelated to `AIGW_BASE_URL`/`AIGW_ADMIN_BASE_URL`), and it
+    forwards the **signed-in user's own access token** (`get_current_access_token`,
+    from `app/main.py`'s `/catalog` route) instead of the admin client-credentials
+    token every other catalog/dashboard call uses. The gateway resolves the caller's
+    workspace from the token's own `portkey_workspace` claim, so unlike every other
+    tab there's no `resolve_workspace_id()` call here at all. Field mapping straight
+    from the published spec
+    (portkey.ai/docs/aigw/api-reference/models/list-models): Model=`id`,
+    Provider=`owned_by`. That response has no price or status field, so Input/Output
+    per 1M tokens always show "—" and every row gets the same "enabled" green pill as
+    the Models tab's accessible-models convention — every model `/v1/models` returns
+    is already scoped to what this user can see.
   - **MCP Tools tab** (`app/data.py:get_catalog_mcp_tools`) is wired to
     `GET /mcp-servers` — on `AIGW_BASE_URL`, unlike `/integrations` and
     `/deployments` which are on `AIGW_ADMIN_BASE_URL`. Field mapping (Server=`name`,
@@ -353,8 +369,8 @@ endpoints are in scope).
     debug panel before trusting it. `workspace_id` here is passed as the resolved
     UUID on the same pattern as `/policies/usage-limits`'s identically-named param,
     also unconfirmed. Shows "No MCP servers found for this workspace" when empty.
-  - **Both tabs sort ascending, case-insensitive** (`app/data.py`): Models by
-    `model` (the slug), MCP Tools by `server` (the name). Plain `rows.sort(...)`
+  - **All three tabs sort ascending, case-insensitive** (`app/data.py`): Models and
+    /v1/models both by `model`, MCP Tools by `server` (the name). Plain `rows.sort(...)`
     on a lowercased key, done once per request — no persisted sort preference,
     no column-header click-to-sort.
   - **Expandable tool list per MCP server** (`app/templates/catalog.html`,

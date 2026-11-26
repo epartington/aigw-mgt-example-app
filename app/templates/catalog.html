@@ -6,10 +6,11 @@
 
 <div class="setup-tab-buttons">
   <a class="setup-tab-btn {{ 'active' if active_tab == 'models' }}" href="/catalog?tab=models">Models</a>
+  <a class="setup-tab-btn {{ 'active' if active_tab == 'v1-models' }}" href="/catalog?tab=v1-models">/v1/models</a>
   <a class="setup-tab-btn {{ 'active' if active_tab == 'mcp-tools' }}" href="/catalog?tab=mcp-tools">MCP Tools</a>
 </div>
 
-{% if active_tab == 'models' %}
+{% if active_tab == 'models' or active_tab == 'v1-models' %}
 <table class="setup-table">
   <thead>
     <tr><th>Model</th><th>Provider</th><th>Input / 1M tokens</th><th>Output / 1M tokens</th><th>Status</th></tr>
