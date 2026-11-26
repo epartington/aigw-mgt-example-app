@@ -281,18 +281,22 @@ endpoints are in scope).
     URL=`auth_settings.gateway_base_url` (from the detail call — **confirmed against a
     real response not to be a top-level field**), Health=`connection_status`
     (`healthy`→green pill, `unhealthy`→red pill, anything else→neutral/grey, via
-    `_gateway_health_class`). Workspace Name: `GET /workspaces/{slug}` on a **fourth
-    host**, `settings.panw_workspace_api_base_url` (default
-    `https://api.sase.paloaltonetworks.com/airs/workspace/v1`) → `name`. **Confirmed
-    against a real response: this endpoint takes the workspace *slug*, not the UUID** —
-    the UUID path form (`/workspaces/{id}`) 403s with this service account's token, the
-    slug form (`/workspaces/{workspace_slug}`) returns 200. `get_workspace_name` takes
-    `workspace_slug` accordingly; every gateway shares the signed-in user's slug, so this
-    is one call per page load, not one per gateway. A gateway whose own
-    `GET /deployments/{id}` `workspaces[]` list has no entry matching `workspace_slug`
-    still shows "Unknown" for that row — same meaning as before, just no longer driving
-    the lookup itself. Auth is the same admin client-credentials token as every other
-    call in `app/gateway.py`.
+    `_gateway_health_class`). Workspace Name: `GET /workspaces/{id}` on a **fourth host**,
+    `settings.panw_workspace_api_base_url` (default
+    `https://api.sase.paloaltonetworks.com/airs/workspace/v1`) → `name`, using the
+    per-gateway resolved UUID (not the slug — confirmed against the published spec,
+    portkey.ai/docs/aigw/api-reference/workspaces/get-workspace: `id` is
+    `string<uuid>`, required; a slug path form isn't documented and errors identically to
+    the UUID form). **Currently 403s (`AUTHZ_DENIED`) for every call** — confirmed this is
+    not a URL-format or auth-mechanism bug (the exact same client-credentials token
+    already works for `/deployments`, `/integrations`, `/policies/usage-limits`); it's the
+    admin service account's assigned role in Strata Cloud Manager not covering the
+    Workspaces resource. Fix by granting that service account a role with Workspaces read
+    access — see the Admin API authentication docs' "Common failures" table. Until then
+    every row's Workspace Name cell shows "Unknown", the intended fallback. Workspace
+    names are resolved once per distinct `workspace_id` (small local cache in
+    `get_dashboard_data`), not once per gateway, since gateways commonly share a
+    workspace.
 - **Claude Code setup card** (`app/data.py:get_claude_code_setup_steps`, rendered in
   `app/templates/integrations.html`): a richer step-by-step layout than Cursor/VS Code,
   which still use the plain intro/command/note format — the template branches on

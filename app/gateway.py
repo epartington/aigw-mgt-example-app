@@ -250,17 +250,24 @@ def list_gateways(workspace_slug: str) -> list[dict]:
     return gateways
 
 
-def get_workspace_name(workspace_slug: str) -> str | None:
-    """Resolve a workspace slug to its display name, or None on failure.
+def get_workspace_name(workspace_id: str) -> str | None:
+    """Resolve a workspace UUID to its display name, or None on failure.
 
-    GET /workspaces/{slug} on settings.panw_workspace_api_base_url — a
+    GET /workspaces/{id} on settings.panw_workspace_api_base_url — a
     fourth host, separate from aigw_base_url/aigw_admin_base_url/
-    gateway_dataplane_url. Confirmed against a real response: the UUID
-    path form (/workspaces/{id}) 403s with this service account's token;
-    the slug path form returns 200 — so this takes workspace_slug (the
-    portkey_workspace claim), not the UUID resolved elsewhere in this
-    module. Auth is otherwise the same admin client-credentials token as
-    every other call here, same PANW/Strata auth domain.
+    gateway_dataplane_url. Confirmed against the published spec
+    (portkey.ai/docs/aigw/api-reference/workspaces/get-workspace): `id`
+    is `string<uuid>`, required — the slug is not an accepted path form,
+    it isn't documented as one and returns the same error as the UUID
+    form against a real call. The real cause of a 403 AUTHZ_DENIED here
+    is the admin service account's assigned role in Strata Cloud
+    Manager not covering the Workspaces resource — the exact same
+    client-credentials token already works for /deployments,
+    /integrations, and /policies/usage-limits, so it isn't an auth
+    *mechanism* problem. Grant the service account a role that includes
+    Workspaces read access (or a broader admin role) to fix this; until
+    then this returns None and the dashboard shows "Unknown" for that
+    cell, which is the intended fallback, not a code bug.
     """
     try:
         token = _get_admin_access_token()
@@ -268,8 +275,8 @@ def get_workspace_name(workspace_slug: str) -> str | None:
         return None
 
     body = _get_json(
-        f"{settings.panw_workspace_api_base_url.rstrip('/')}/workspaces/{workspace_slug}",
-        f"GET /workspaces/{workspace_slug}",
+        f"{settings.panw_workspace_api_base_url.rstrip('/')}/workspaces/{workspace_id}",
+        f"GET /workspaces/{workspace_id}",
         headers={"Authorization": f"Bearer {token}"},
     )
     if body is None:

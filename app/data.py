@@ -386,19 +386,26 @@ def get_dashboard_data(claims: dict) -> DashboardData:
         (g["workspace_id"] for g in gateways_raw if g.get("workspace_id")), None
     )
 
-    # get_workspace_name takes the slug, not a gateway's resolved UUID — the
-    # UUID path form 403s against this service account's token (confirmed
-    # against a real response), the slug form returns 200. Every gateway
-    # here shares the same signed-in user's workspace_slug, so this is one
-    # call, not one per gateway.
-    resolved_workspace_name = get_workspace_name(workspace_slug) if workspace_slug else None
-
+    # get_workspace_name takes the resolved UUID per the published spec
+    # (id: string<uuid>, required) — resolved once per distinct
+    # workspace_id (small local cache), not once per gateway, since
+    # gateways commonly share a workspace. Currently 403s for every UUID
+    # (AUTHZ_DENIED) — see get_workspace_name's docstring: this is the
+    # admin service account's role missing Workspaces permission in
+    # Strata Cloud Manager, not a URL-format bug, so every row falls back
+    # to "Unknown" until that role is granted.
+    workspace_name_cache: dict[str, str | None] = {}
     gateways = []
     for g in gateways_raw:
-        # Still "Unknown" when this particular deployment's workspaces[]
-        # list didn't contain a match for workspace_slug — same meaning as
-        # before, just no longer driving the lookup itself.
-        workspace_name = resolved_workspace_name or "Unknown" if g.get("workspace_id") else "Unknown"
+        gateway_workspace_id = g.get("workspace_id")
+        if gateway_workspace_id:
+            if gateway_workspace_id not in workspace_name_cache:
+                workspace_name_cache[gateway_workspace_id] = get_workspace_name(
+                    gateway_workspace_id
+                )
+            workspace_name = workspace_name_cache[gateway_workspace_id] or "Unknown"
+        else:
+            workspace_name = "Unknown"
         gateways.append(
             {
                 "name": g.get("name") or "Unknown",
