@@ -69,6 +69,16 @@
 </table>
 {% endif %}
 
+{% if active_tab == 'v1-models' %}
+<div class="tile tile-wide">
+  <div class="tile-label">Requirements</div>
+  <p class="setup-note">
+    This endpoint requires the <code>virtual_keys.list</code> permission on the calling
+    token, and the gateway config setting <code>"fetch_integrated_models": true</code>.
+  </p>
+</div>
+{% endif %}
+
 <div class="tile tile-wide debug-tile">
   <div class="tile-label">Debug: API calls made for this tab</div>
   {% if tab_data.debug_calls %}

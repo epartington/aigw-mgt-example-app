@@ -360,7 +360,11 @@ endpoints are in scope).
     Provider=`owned_by`. That response has no price or status field, so Input/Output
     per 1M tokens always show "—" and every row gets the same "enabled" green pill as
     the Models tab's accessible-models convention — every model `/v1/models` returns
-    is already scoped to what this user can see.
+    is already scoped to what this user can see. A note tile below the table (above the
+    debug tile, `app/templates/catalog.html`) states the two server-side prerequisites
+    this endpoint needs — the `virtual_keys.list` permission on the calling token, and
+    the gateway config setting `"fetch_integrated_models": true` — since neither is
+    something this app can detect or work around client-side.
   - **MCP Tools tab** (`app/data.py:get_catalog_mcp_tools`) is wired to
     `GET /mcp-servers` — on `AIGW_BASE_URL`, unlike `/integrations` and
     `/deployments` which are on `AIGW_ADMIN_BASE_URL`. Field mapping (Server=`name`,
